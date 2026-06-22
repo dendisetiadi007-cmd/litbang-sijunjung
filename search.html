@@ -100,6 +100,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script>
+    function formatTanggal(dateStr) {
+      const tgl = new Date(dateStr);
+      const bulan = tgl.getMonth();
+      const hari = tgl.getDate();
+      if (bulan === 0 && hari === 1) return tgl.getFullYear().toString();
+      return tgl.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
     async function populateTahunFilter() {
       const { data } = await db.from('kajian').select('tanggal_terbit').order('tanggal_terbit', { ascending: false });
       if (!data) return;
