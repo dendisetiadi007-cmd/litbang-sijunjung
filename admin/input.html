@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Input Kajian — Litbang Sijunjung</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .admin-layout { display: flex; min-height: calc(100vh - 64px); }
+    .sidebar { width: 220px; background: var(--putih); border-right: 1px solid var(--border); padding: 24px 0; flex-shrink: 0; }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 11px 24px; font-size: 14px; color: var(--teks-utama); text-decoration: none; transition: all 0.15s; }
+    .sidebar-menu li a:hover, .sidebar-menu li a.active { background: var(--krem); color: var(--hijau-tua); font-weight: 600; border-right: 3px solid var(--hijau-tua); }
+    .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+    .admin-main { flex: 1; padding: 32px; background: var(--krem); }
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-family: 'Lora', serif; font-size: 1.4rem; color: var(--hijau-tua); }
+    .page-header p { font-size: 13px; color: var(--teks-abu); margin-top: 4px; }
+
+    .form-card { background: var(--putih); border: 1px solid var(--border); border-radius: 10px; padding: 32px; max-width: 720px; }
+    .form-group { margin-bottom: 22px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--teks-utama); }
+    .form-group label span { font-weight: 400; color: var(--teks-abu); margin-left: 4px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: var(--putih);
+      color: var(--teks-utama);
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--hijau-muda); }
+    .form-group textarea { resize: vertical; min-height: 120px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    /* TAG INPUT */
+    .tag-input-wrap {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      cursor: text;
+      transition: border-color 0.2s;
+      min-height: 46px;
+    }
+    .tag-input-wrap:focus-within { border-color: var(--hijau-muda); }
+    .tag-input-wrap .tag {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: var(--krem-gelap);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--hijau-mid);
+    }
+    .tag-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--teks-abu);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+    .tag-remove:hover { color: #B91C1C; }
+    .tag-text-input {
+      border: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+      flex: 1;
+      min-width: 120px;
+      background: transparent;
+    }
+    .tag-hint { font-size: 11px; color: var(--teks-abu); margin-top: 6px; }
+
+    /* FILE UPLOAD */
+    .file-area {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .file-area:hover, .file-area.dragging { border-color: var(--hijau-muda); background: rgba(82,183,136,0.05); }
+    .file-area p { font-size: 14px; color: var(--teks-abu); margin-bottom: 8px; }
+    .file-area small { font-size: 12px; color: var(--border); }
+    .file-input { display: none; }
+    .file-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--krem);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .file-preview button { margin-left: auto; background: none; border: none; color: var(--teks-abu); cursor: pointer; font-size: 16px; }
+
+    .progress-bar-wrap { background: var(--krem-gelap); border-radius: 4px; height: 6px; margin-top: 8px; display: none; }
+    .progress-bar { background: var(--hijau-muda); height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+    .form-actions { display: flex; gap: 12px; margin-top: 8px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .success-msg, .error-msg {
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .success-msg { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+    .error-msg { background: #FEE2E2; color: #B91C1C; border: 1px solid #FCA5A5; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="brand-text">Litbang Sijunjung</div>
+        <div class="brand-sub">Panel Admin</div>
+      </div>
+    </a>
+    <div class="navbar-nav">
+      <a href="../index.html" class="nav-link">Lihat Website</a>
+      <a href="#" class="nav-link" onclick="handleLogout()">Keluar</a>
+    </div>
+  </nav>
+
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="dashboard.html">📊 Dashboard</a></li>
+        <li><a href="input.html" class="active">➕ Tambah Kajian</a></li>
+        <hr class="sidebar-divider">
+        <li><a href="../index.html">🌐 Lihat Website</a></li>
+        <li><a href="#" onclick="handleLogout()">🚪 Keluar</a></li>
+      </ul>
+    </aside>
+
+    <main class="admin-main">
+      <div class="page-header">
+        <h1 id="pageTitle">Tambah Kajian Baru</h1>
+        <p>Isi form di bawah untuk mempublikasikan kajian ke database</p>
+      </div>
+
+      <div class="form-card">
+        <div class="success-msg" id="successMsg"></div>
+        <div class="error-msg" id="errorMsg"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="penulis">Penulis</label>
+            <input type="text" id="penulis" placeholder="Nama penulis kajian" />
+          </div>
+          <div class="form-group">
+            <label for="tanggal">Tanggal Terbit</label>
+            <input type="date" id="tanggal" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="judul">Judul Kajian</label>
+          <input type="text" id="judul" placeholder="Judul lengkap kajian atau penelitian" />
+        </div>
+
+        <div class="form-group">
+          <label for="abstrak">Abstrak <span>(opsional)</span></label>
+          <textarea id="abstrak" placeholder="Ringkasan singkat isi kajian…"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Kata Kunci</label>
+          <div class="tag-input-wrap" id="tagWrap" onclick="focusTagInput()">
+            <input type="text" class="tag-text-input" id="tagInput" placeholder="Ketik lalu Enter…" />
+          </div>
+          <div class="tag-hint">Tekan Enter atau koma untuk menambah kata kunci</div>
+        </div>
+
+        <div class="form-group">
+          <label>Dokumen Kajian <span>(PDF, maks. 50 MB)</span></label>
+          <div class="file-area" id="fileArea" onclick="document.getElementById('fileInput').click()">
+            <p>📄 Klik untuk pilih file PDF</p>
+            <small>atau drag & drop ke sini</small>
+          </div>
+          <input type="file" class="file-input" id="fileInput" accept=".pdf" />
+          <div class="file-preview" id="filePreview" style="display:none">
+            <span>📄</span>
+            <span id="fileName"></span>
+            <button onclick="removeFile()">✕</button>
+          </div>
+          <div class="progress-bar-wrap" id="progressWrap">
+            <div class="progress-bar" id="progressBar" style="width:0%"></div>
+          </div>
+
+          <!-- Atau link URL -->
+          <div style="margin-top:12px;font-size:13px;color:var(--teks-abu)">— atau masukkan link langsung —</div>
+          <input type="url" id="fileUrl" placeholder="https://drive.google.com/..." style="margin-top:8px;width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;outline:none;" />
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btnSave" onclick="saveKajian()">💾 Simpan & Publikasikan</button>
+          <a href="dashboard.html" class="btn btn-outline">Batal</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script>
+    let tags = [];
+    let editId = null;
+    let uploadedFileUrl = null;
+
+    // Auth check
+    db.auth.getSession().then(({ data }) => {
+      if (!data.session) window.location.href = 'login.html';
+    });
+
+    // Check edit mode
+    const params = new URLSearchParams(window.location.search);
+    editId = params.get('id');
+    if (editId) {
+      document.getElementById('pageTitle').textContent = 'Edit Kajian';
+      document.querySelector('.page-header p').textContent = 'Ubah data kajian yang sudah ada';
+      document.getElementById('btnSave').textContent = '💾 Simpan Perubahan';
+      loadEditData();
+    }
+
+    async function loadEditData() {
+      const { data } = await db.from('kajian').select(`*, kajian_keywords(keywords(nama))`).eq('id', editId).single();
+      if (!data) return;
+      document.getElementById('judul').value = data.judul;
+      document.getElementById('penulis').value = data.penulis;
+      document.getElementById('tanggal').value = data.tanggal_terbit;
+      document.getElementById('abstrak').value = data.abstrak || '';
+      document.getElementById('fileUrl').value = data.file_url || '';
+      uploadedFileUrl = data.file_url;
+
+      // Load tags
+      if (data.kajian_keywords) {
+        data.kajian_keywords.forEach(kk => addTag(kk.keywords.nama));
+      }
+    }
+
+    // TAG INPUT
+    document.getElementById('tagInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const val = this.value.trim().replace(/,$/, '');
+        if (val) addTag(val);
+        this.value = '';
+      } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
+        removeTag(tags[tags.length - 1]);
+      }
+    });
+
+    function focusTagInput() { document.getElementById('tagInput').focus(); }
+
+    function addTag(val) {
+      val = val.trim();
+      if (!val || tags.includes(val.toLowerCase())) return;
+      tags.push(val.toLowerCase());
+      renderTags();
+    }
+
+    function removeTag(val) {
+      tags = tags.filter(t => t !== val);
+      renderTags();
+    }
+
+    function renderTags() {
+      const wrap = document.getElementById('tagWrap');
+      const input = document.getElementById('tagInput');
+      // Remove old tag elements
+      wrap.querySelectorAll('.tag').forEach(el => el.remove());
+      tags.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.innerHTML = `${t}<button class="tag-remove" onclick="removeTag('${t}')">×</button>`;
+        wrap.insertBefore(span, input);
+      });
+    }
+
+    // FILE UPLOAD
+    document.getElementById('fileInput').addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) showFilePreview(file);
+    });
+
+    const fileArea = document.getElementById('fileArea');
+    fileArea.addEventListener('dragover', e => { e.preventDefault(); fileArea.classList.add('dragging'); });
+    fileArea.addEventListener('dragleave', () => fileArea.classList.remove('dragging'));
+    fileArea.addEventListener('drop', e => {
+      e.preventDefault();
+      fileArea.classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file && file.type === 'application/pdf') {
+        document.getElementById('fileInput').files = e.dataTransfer.files;
+        showFilePreview(file);
+      }
+    });
+
+    function showFilePreview(file) {
+      document.getElementById('fileArea').style.display = 'none';
+      document.getElementById('filePreview').style.display = 'flex';
+      document.getElementById('fileName').textContent = file.name + ` (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+    }
+
+    function removeFile() {
+      document.getElementById('fileInput').value = '';
+      document.getElementById('fileArea').style.display = '';
+      document.getElementById('filePreview').style.display = 'none';
+      uploadedFileUrl = null;
+    }
+
+    async function uploadFile() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return null;
+
+      const progressWrap = document.getElementById('progressWrap');
+      const progressBar = document.getElementById('progressBar');
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '30%';
+
+      const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const { data, error } = await db.storage.from('kajian-files').upload(fileName, file, { upsert: false });
+
+      progressBar.style.width = '100%';
+      setTimeout(() => progressWrap.style.display = 'none', 500);
+
+      if (error) { showError('Gagal upload file: ' + error.message); return null; }
+
+      const { data: urlData } = db.storage.from('kajian-files').getPublicUrl(data.path);
+      return urlData.publicUrl;
+    }
+
+    async function saveKajian() {
+      const judul = document.getElementById('judul').value.trim();
+      const penulis = document.getElementById('penulis').value.trim();
+      const tanggal = document.getElementById('tanggal').value;
+      const abstrak = document.getElementById('abstrak').value.trim();
+      const manualUrl = document.getElementById('fileUrl').value.trim();
+
+      if (!judul || !penulis || !tanggal) {
+        showError('Judul, penulis, dan tanggal terbit wajib diisi.');
+        return;
+      }
+
+      const btn = document.getElementById('btnSave');
+      btn.disabled = true;
+      btn.textContent = 'Menyimpan…';
+
+      // Upload file jika ada
+      let fileUrl = manualUrl || uploadedFileUrl;
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput.files[0]) {
+        fileUrl = await uploadFile();
+        if (!fileUrl) { btn.disabled = false; btn.textContent = '💾 Simpan & Publikasikan'; return; }
+      }
+
+      try {
+        let kajianId = editId;
+
+        if (editId) {
+          // Update
+          const { error } = await db.from('kajian').update({ judul, penulis, tanggal_terbit: tanggal, abstrak, file_url: fileUrl }).eq('id', editId);
+          if (error) throw error;
+          // Hapus keywords lama
+          await db.from('kajian_keywords').delete().eq('kajian_id', editId);
+        } else {
+          // Insert baru
+          const { data, error } = await db.from('kajian').insert({ judul, penulis, tanggal_terbit: tanggal, abstrak, file_url: fileUrl }).select().single();
+          if (error) throw error;
+          kajianId = data.id;
+        }
+
+        // Simpan keywords
+        for (const tag of tags) {
+          // Upsert keyword
+          const { data: kwData } = await db.from('keywords').upsert({ nama: tag }, { onConflict: 'nama' }).select().single();
+          const kwId = kwData?.id;
+          if (kwId) await db.from('kajian_keywords').insert({ kajian_id: kajianId, keyword_id: kwId }).select();
+        }
+
+        showSuccess(editId ? 'Kajian berhasil diperbarui!' : 'Kajian berhasil dipublikasikan!');
+        if (!editId) {
+          // Reset form
+          document.getElementById('judul').value = '';
+          document.getElementById('penulis').value = '';
+          document.getElementById('tanggal').value = '';
+          document.getElementById('abstrak').value = '';
+          document.getElementById('fileUrl').value = '';
+          tags = [];
+          renderTags();
+          removeFile();
+        }
+
+      } catch (err) {
+        showError('Terjadi kesalahan: ' + err.message);
+      }
+
+      btn.disabled = false;
+      btn.textContent = editId ? '💾 Simpan Perubahan' : '💾 Simpan & Publikasikan';
+    }
+
+    function showSuccess(msg) {
+      const el = document.getElementById('successMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('errorMsg').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('successMsg').style.display = 'none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

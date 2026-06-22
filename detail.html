@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detail Kajian — Litbang Sijunjung</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .detail-wrap { max-width: 780px; margin: 0 auto; padding: 48px 2rem; }
+    .breadcrumb { font-size: 13px; color: var(--teks-abu); margin-bottom: 32px; }
+    .breadcrumb a { color: var(--hijau-mid); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .detail-header { margin-bottom: 32px; }
+    .detail-title {
+      font-family: 'Lora', serif;
+      font-size: 1.7rem;
+      font-weight: 600;
+      color: var(--hijau-tua);
+      line-height: 1.35;
+      margin-bottom: 16px;
+    }
+    .detail-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      color: var(--teks-abu);
+      flex-wrap: wrap;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-meta span { display: flex; align-items: center; gap: 6px; }
+    .detail-section { margin-bottom: 32px; }
+    .detail-section h3 {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--teks-abu);
+      margin-bottom: 12px;
+    }
+    .detail-abstrak {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--teks-utama);
+      background: var(--putih);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--hijau-muda);
+      border-radius: 8px;
+      padding: 20px 24px;
+    }
+    .detail-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .detail-actions {
+      background: var(--putih);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .detail-actions p { font-size: 14px; color: var(--teks-abu); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="brand-text">Litbang Sijunjung</div>
+        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+      </div>
+    </a>
+    <div class="navbar-nav">
+      <a href="index.html" class="nav-link">Beranda</a>
+      <a href="search.html" class="nav-link">Semua Kajian</a>
+      <a href="admin/login.html" class="nav-link">Admin</a>
+    </div>
+  </nav>
+
+  <div class="detail-wrap">
+    <div class="breadcrumb">
+      <a href="index.html">Beranda</a> › <a href="search.html">Kajian</a> › <span id="breadTitle">Detail</span>
+    </div>
+
+    <div id="detailContent">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Memuat kajian…</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <strong>Bappeda Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+    async function loadDetail() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+
+      if (!id) { window.location.href = 'index.html'; return; }
+
+      const { data, error } = await db
+        .from('kajian')
+        .select(`*, kajian_keywords(keywords(nama))`)
+        .eq('id', id)
+        .single();
+
+      const wrap = document.getElementById('detailContent');
+
+      if (error || !data) {
+        wrap.innerHTML = `<div class="empty-state"><p>Kajian tidak ditemukan.</p><a href="index.html" class="btn btn-outline" style="margin-top:16px">← Kembali</a></div>`;
+        return;
+      }
+
+      document.title = `${data.judul} — Litbang Sijunjung`;
+      document.getElementById('breadTitle').textContent = data.judul.length > 40 ? data.judul.substring(0, 40) + '…' : data.judul;
+
+      const tanggal = new Date(data.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+      const tags = data.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join('') || '';
+
+      wrap.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-title">${data.judul}</div>
+          <div class="detail-meta">
+            <span>✍️ ${data.penulis}</span>
+            <span>📅 ${tanggal}</span>
+          </div>
+        </div>
+
+        ${data.abstrak ? `
+        <div class="detail-section">
+          <h3>Abstrak</h3>
+          <div class="detail-abstrak">${data.abstrak}</div>
+        </div>` : ''}
+
+        ${tags ? `
+        <div class="detail-section">
+          <h3>Kata Kunci</h3>
+          <div class="detail-tags">${tags}</div>
+        </div>` : ''}
+
+        <div class="detail-actions">
+          <p>📄 Dokumen kajian tersedia untuk diunduh</p>
+          ${data.file_url
+            ? `<a href="${data.file_url}" target="_blank" class="btn btn-primary">⬇ Unduh Dokumen</a>`
+            : `<span style="font-size:13px;color:var(--teks-abu)">Dokumen belum tersedia</span>`
+          }
+        </div>
+
+        <div style="margin-top: 32px;">
+          <a href="search.html" class="btn btn-outline">← Kembali ke Daftar Kajian</a>
+        </div>
+      `;
+    }
+
+    loadDetail();
+  </script>
+</body>
+</html>

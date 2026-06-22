@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Database Kajian Litbang — Bappeda Sijunjung</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="brand-text">Litbang Sijunjung</div>
+        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+      </div>
+    </a>
+    <div class="navbar-nav">
+      <a href="index.html" class="nav-link active">Beranda</a>
+      <a href="search.html" class="nav-link">Semua Kajian</a>
+      <a href="admin/login.html" class="nav-link">Admin</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">Repositori Terbuka</div>
+      <h1>Database Kajian & Penelitian Daerah</h1>
+      <p>Temukan kajian dan penelitian yang telah dilakukan Bappeda Kabupaten Sijunjung sebagai dasar perencanaan pembangunan daerah.</p>
+      <form class="search-box" onsubmit="handleSearch(event)">
+        <input type="text" id="searchInput" placeholder="Cari judul, penulis, atau kata kunci…" />
+        <button type="submit">Cari</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num" id="totalKajian">—</div>
+      <div class="stat-label">Total Kajian</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="totalTahun">—</div>
+      <div class="stat-label">Rentang Tahun</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="totalKeyword">—</div>
+      <div class="stat-label">Kata Kunci</div>
+    </div>
+  </div>
+
+  <!-- KAJIAN TERBARU -->
+  <div class="container">
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">10 Kajian Terbaru</h2>
+        <a href="search.html" class="section-link">Lihat semua →</a>
+      </div>
+      <div class="kajian-list" id="kajianList">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Memuat kajian…</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <strong>Bappeda Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+    async function loadStats() {
+      const { count: totalKajian } = await db.from('kajian').select('*', { count: 'exact', head: true });
+      const { count: totalKeyword } = await db.from('keywords').select('*', { count: 'exact', head: true });
+      const { data: tahunData } = await db.from('kajian').select('tanggal_terbit').order('tanggal_terbit', { ascending: true });
+
+      document.getElementById('totalKajian').textContent = totalKajian ?? 0;
+      document.getElementById('totalKeyword').textContent = totalKeyword ?? 0;
+
+      if (tahunData && tahunData.length > 0) {
+        const tahunAwal = new Date(tahunData[0].tanggal_terbit).getFullYear();
+        const tahunAkhir = new Date(tahunData[tahunData.length - 1].tanggal_terbit).getFullYear();
+        document.getElementById('totalTahun').textContent = tahunAwal === tahunAkhir ? tahunAwal : `${tahunAwal}–${tahunAkhir}`;
+      } else {
+        document.getElementById('totalTahun').textContent = '—';
+      }
+    }
+
+    async function loadKajianTerbaru() {
+      const { data, error } = await db
+        .from('kajian')
+        .select(`id, judul, penulis, tanggal_terbit, kajian_keywords(keywords(nama))`)
+        .order('tanggal_terbit', { ascending: false })
+        .limit(10);
+
+      const list = document.getElementById('kajianList');
+
+      if (error || !data || data.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p>Belum ada kajian yang dipublikasikan.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = data.map((k, i) => {
+        const tags = k.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join('') || '';
+        const tanggal = new Date(k.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        return `
+          <a href="detail.html?id=${k.id}" class="kajian-card">
+            <div class="kajian-num">${String(i + 1).padStart(2, '0')}</div>
+            <div class="kajian-body">
+              <div class="kajian-title">${k.judul}</div>
+              <div class="kajian-meta">
+                <span>✍️ ${k.penulis}</span>
+                <span>📅 ${tanggal}</span>
+              </div>
+              ${tags ? `<div class="kajian-tags">${tags}</div>` : ''}
+            </div>
+            <div class="kajian-arrow">›</div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function handleSearch(e) {
+      e.preventDefault();
+      const q = document.getElementById('searchInput').value.trim();
+      if (q) window.location.href = `search.html?q=${encodeURIComponent(q)}`;
+    }
+
+    loadStats();
+    loadKajianTerbaru();
+  </script>
+</body>
+</html>

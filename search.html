@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Semua Kajian — Litbang Sijunjung</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .search-header {
+      background: var(--hijau-tua);
+      padding: 36px 2rem;
+    }
+    .search-header h1 {
+      font-family: 'Lora', serif;
+      color: var(--putih);
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    .search-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-controls .search-box {
+      flex: 1;
+      min-width: 240px;
+      max-width: 420px;
+      margin: 0;
+      box-shadow: none;
+    }
+    .filter-select {
+      background: rgba(255,255,255,0.15);
+      color: var(--putih);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-select option { color: var(--teks-utama); background: var(--putih); }
+    .result-info {
+      font-size: 13px;
+      color: var(--teks-abu);
+      margin-bottom: 20px;
+    }
+    .result-info strong { color: var(--hijau-tua); }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="brand-text">Litbang Sijunjung</div>
+        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+      </div>
+    </a>
+    <div class="navbar-nav">
+      <a href="index.html" class="nav-link">Beranda</a>
+      <a href="search.html" class="nav-link active">Semua Kajian</a>
+      <a href="admin/login.html" class="nav-link">Admin</a>
+    </div>
+  </nav>
+
+  <div class="search-header">
+    <div class="container">
+      <h1>Semua Kajian & Penelitian</h1>
+      <div class="search-controls">
+        <form class="search-box" onsubmit="doSearch(event)" style="max-width:420px">
+          <input type="text" id="searchInput" placeholder="Cari judul, penulis, kata kunci…" />
+          <button type="submit">Cari</button>
+        </form>
+        <select class="filter-select" id="filterTahun" onchange="doSearch()">
+          <option value="">Semua Tahun</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <section class="section">
+      <p class="result-info" id="resultInfo"></p>
+      <div class="kajian-list" id="kajianList">
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Memuat kajian…</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <strong>Bappeda Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+    async function populateTahunFilter() {
+      const { data } = await db.from('kajian').select('tanggal_terbit').order('tanggal_terbit', { ascending: false });
+      if (!data) return;
+      const years = [...new Set(data.map(d => new Date(d.tanggal_terbit).getFullYear()))];
+      const sel = document.getElementById('filterTahun');
+      years.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        sel.appendChild(opt);
+      });
+
+      // Set from URL
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tahun')) sel.value = params.get('tahun');
+    }
+
+    async function doSearch(e) {
+      if (e) e.preventDefault();
+
+      const q = document.getElementById('searchInput').value.trim();
+      const tahun = document.getElementById('filterTahun').value;
+
+      // Update URL
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      if (tahun) params.set('tahun', tahun);
+      history.replaceState(null, '', '?' + params.toString());
+
+      const list = document.getElementById('kajianList');
+      list.innerHTML = `<div class="loading-state"><div class="loading-spinner"></div><p>Mencari…</p></div>`;
+
+      let query = db
+        .from('kajian')
+        .select(`id, judul, penulis, tanggal_terbit, kajian_keywords(keywords(nama))`)
+        .order('tanggal_terbit', { ascending: false });
+
+      if (q) query = query.or(`judul.ilike.%${q}%,penulis.ilike.%${q}%,abstrak.ilike.%${q}%`);
+      if (tahun) query = query.gte('tanggal_terbit', `${tahun}-01-01`).lte('tanggal_terbit', `${tahun}-12-31`);
+
+      const { data, error } = await query;
+
+      // Filter by keyword jika ada query
+      let result = data || [];
+      if (q && result.length === 0) {
+        // Coba cari by keyword
+        const { data: kwData } = await db
+          .from('keywords')
+          .select('id')
+          .ilike('nama', `%${q}%`);
+
+        if (kwData && kwData.length > 0) {
+          const kwIds = kwData.map(k => k.id);
+          const { data: kjData } = await db
+            .from('kajian_keywords')
+            .select('kajian_id')
+            .in('keyword_id', kwIds);
+
+          if (kjData && kjData.length > 0) {
+            const kajianIds = [...new Set(kjData.map(k => k.kajian_id))];
+            let q2 = db
+              .from('kajian')
+              .select(`id, judul, penulis, tanggal_terbit, kajian_keywords(keywords(nama))`)
+              .in('id', kajianIds)
+              .order('tanggal_terbit', { ascending: false });
+            if (tahun) q2 = q2.gte('tanggal_terbit', `${tahun}-01-01`).lte('tanggal_terbit', `${tahun}-12-31`);
+            const { data: finalData } = await q2;
+            result = finalData || [];
+          }
+        }
+      }
+
+      const infoEl = document.getElementById('resultInfo');
+      if (q || tahun) {
+        infoEl.innerHTML = `Menampilkan <strong>${result.length}</strong> kajian${q ? ` untuk "<strong>${q}</strong>"` : ''}${tahun ? ` tahun <strong>${tahun}</strong>` : ''}`;
+      } else {
+        infoEl.innerHTML = `Total <strong>${result.length}</strong> kajian`;
+      }
+
+      if (error || result.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p>Tidak ada kajian yang sesuai dengan pencarian.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = result.map((k, i) => {
+        const tags = k.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join('') || '';
+        const tanggal = new Date(k.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        return `
+          <a href="detail.html?id=${k.id}" class="kajian-card">
+            <div class="kajian-num">${String(i + 1).padStart(2, '0')}</div>
+            <div class="kajian-body">
+              <div class="kajian-title">${k.judul}</div>
+              <div class="kajian-meta">
+                <span>✍️ ${k.penulis}</span>
+                <span>📅 ${tanggal}</span>
+              </div>
+              ${tags ? `<div class="kajian-tags">${tags}</div>` : ''}
+            </div>
+            <div class="kajian-arrow">›</div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    // Init
+    const initParams = new URLSearchParams(window.location.search);
+    if (initParams.get('q')) document.getElementById('searchInput').value = initParams.get('q');
+
+    populateTahunFilter().then(() => doSearch());
+  </script>
+</body>
+</html>

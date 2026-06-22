@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Admin — Litbang Sijunjung</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .login-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .login-card {
+      background: var(--putih);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-logo .icon {
+      width: 56px;
+      height: 56px;
+      background: var(--hijau-tua);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin: 0 auto 12px;
+    }
+    .login-logo h1 {
+      font-family: 'Lora', serif;
+      font-size: 1.2rem;
+      color: var(--hijau-tua);
+    }
+    .login-logo p { font-size: 13px; color: var(--teks-abu); margin-top: 4px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--teks-utama);
+      margin-bottom: 8px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--hijau-muda); }
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: var(--hijau-tua);
+      color: var(--putih);
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .btn-login:hover { background: var(--hijau-mid); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error-msg {
+      background: #FEE2E2;
+      color: #B91C1C;
+      border: 1px solid #FCA5A5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+    .back-link a { color: var(--hijau-mid); text-decoration: none; }
+    .back-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <div class="logo-icon">📚</div>
+      <div>
+        <div class="brand-text">Litbang Sijunjung</div>
+        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+      </div>
+    </a>
+  </nav>
+
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="icon">🔐</div>
+        <h1>Login Admin</h1>
+        <p>Masuk untuk mengelola database kajian</p>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="admin@sijunjung.go.id" />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" />
+      </div>
+      <button class="btn-login" id="btnLogin" onclick="handleLogin()">Masuk</button>
+
+      <div class="back-link">
+        <a href="../index.html">← Kembali ke beranda</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/config.js"></script>
+  <script>
+    // Cek jika sudah login
+    db.auth.getSession().then(({ data }) => {
+      if (data.session) window.location.href = 'dashboard.html';
+    });
+
+    async function handleLogin() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('btnLogin');
+      const errMsg = document.getElementById('errorMsg');
+
+      if (!email || !password) {
+        showError('Email dan password wajib diisi.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Masuk…';
+      errMsg.style.display = 'none';
+
+      const { error } = await db.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        showError('Email atau password salah. Silakan coba lagi.');
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+      } else {
+        window.location.href = 'dashboard.html';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    // Enter key
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  </script>
+</body>
+</html>
