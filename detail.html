@@ -67,10 +67,10 @@
 
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
-      <div class="logo-icon">📚</div>
+      <img src="https://i.ibb.co.com/rJXDzN1/sosmed-new.png" alt="Logo BAPPPEDA Sijunjung" style="height:36px;width:36px;object-fit:contain;border-radius:8px;" />
       <div>
         <div class="brand-text">Litbang Sijunjung</div>
-        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+        <div class="brand-sub">BAPPPEDA Kabupaten Sijunjung</div>
       </div>
     </a>
     <div class="navbar-nav">
@@ -94,12 +94,22 @@
   </div>
 
   <footer class="footer">
-    <strong>Bappeda Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
+    <strong>BAPPPEDA Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script>
+    function formatTanggal(dateStr) {
+        const tgl = new Date(dateStr);
+        const bulan = tgl.getMonth();
+        const hari = tgl.getDate();
+        if (bulan === 0 && hari === 1) {
+          return tgl.getFullYear().toString();
+        }
+        return tgl.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+
     async function loadDetail() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
@@ -122,7 +132,7 @@
       document.title = `${data.judul} — Litbang Sijunjung`;
       document.getElementById('breadTitle').textContent = data.judul.length > 40 ? data.judul.substring(0, 40) + '…' : data.judul;
 
-      const tanggal = new Date(data.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+      const tanggal = formatTanggal(data.tanggal_terbit);
       const tags = data.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join('') || '';
 
       wrap.innerHTML = `

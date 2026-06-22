@@ -11,10 +11,10 @@
   <!-- NAVBAR -->
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
-      <div class="logo-icon">📚</div>
+      <img src="https://i.ibb.co.com/rJXDzN1/sosmed-new.png" alt="Logo BAPPPEDA Sijunjung" style="height:36px;width:36px;object-fit:contain;border-radius:8px;" />
       <div>
         <div class="brand-text">Litbang Sijunjung</div>
-        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+        <div class="brand-sub">BAPPPEDA Kabupaten Sijunjung</div>
       </div>
     </a>
     <div class="navbar-nav">
@@ -57,7 +57,7 @@
   <div class="container">
     <section class="section">
       <div class="section-header">
-        <h2 class="section-title">10 Kajian Terbaru</h2>
+        <h2 class="section-title">Kajian Terbaru</h2>
         <a href="search.html" class="section-link">Lihat semua →</a>
       </div>
       <div class="kajian-list" id="kajianList">
@@ -71,12 +71,22 @@
 
   <!-- FOOTER -->
   <footer class="footer">
-    <strong>Bappeda Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
+    <strong>BAPPPEDA Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script>
+    function formatTanggal(dateStr) {
+        const tgl = new Date(dateStr);
+        const bulan = tgl.getMonth();
+        const hari = tgl.getDate();
+        if (bulan === 0 && hari === 1) {
+          return tgl.getFullYear().toString();
+        }
+        return tgl.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+
     async function loadStats() {
       const { count: totalKajian } = await db.from('kajian').select('*', { count: 'exact', head: true });
       const { count: totalKeyword } = await db.from('keywords').select('*', { count: 'exact', head: true });
@@ -99,7 +109,7 @@
         .from('kajian')
         .select(`id, judul, penulis, tanggal_terbit, kajian_keywords(keywords(nama))`)
         .order('tanggal_terbit', { ascending: false })
-        .limit(10);
+        .limit(5);
 
       const list = document.getElementById('kajianList');
 
@@ -110,7 +120,7 @@
 
       list.innerHTML = data.map((k, i) => {
         const tags = k.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join('') || '';
-        const tanggal = new Date(k.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        const tanggal = formatTanggal(k.tanggal_terbit);
         return `
           <a href="detail.html?id=${k.id}" class="kajian-card">
             <div class="kajian-num">${String(i + 1).padStart(2, '0')}</div>

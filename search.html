@@ -53,10 +53,10 @@
 
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
-      <div class="logo-icon">📚</div>
+      <img src="https://i.ibb.co.com/rJXDzN1/sosmed-new.png" alt="Logo BAPPPEDA Sijunjung" style="height:36px;width:36px;object-fit:contain;border-radius:8px;" />
       <div>
         <div class="brand-text">Litbang Sijunjung</div>
-        <div class="brand-sub">Bappeda Kabupaten Sijunjung</div>
+        <div class="brand-sub">BAPPPEDA Kabupaten Sijunjung</div>
       </div>
     </a>
     <div class="navbar-nav">
@@ -94,7 +94,7 @@
   </div>
 
   <footer class="footer">
-    <strong>Bappeda Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
+    <strong>BAPPPEDA Kabupaten Sijunjung</strong> · Database Kajian Litbang · Terbuka untuk publik
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -186,7 +186,7 @@
 
       list.innerHTML = result.map((k, i) => {
         const tags = k.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join('') || '';
-        const tanggal = new Date(k.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+        const tanggal = formatTanggal(k.tanggal_terbit);
         return `
           <a href="detail.html?id=${k.id}" class="kajian-card">
             <div class="kajian-num">${String(i + 1).padStart(2, '0')}</div>
