@@ -135,7 +135,7 @@
 
   <nav class="navbar">
     <a href="../index.html" class="navbar-brand">
-      <div class="logo-icon">📚</div>
+      <img src="https://i.ibb.co.com/rJXDzN1/sosmed-new.png" alt="Logo BAPPPEDA Sijunjung" style="height:36px;width:36px;object-fit:contain;border-radius:8px;" />
       <div>
         <div class="brand-text">Litbang Sijunjung</div>
         <div class="brand-sub">Panel Admin</div>
@@ -214,6 +214,16 @@
       document.getElementById('adminEmail').textContent = data.session.user.email;
     }
 
+    function formatTanggal(dateStr) {
+        const tgl = new Date(dateStr);
+        const bulan = tgl.getMonth();
+        const hari = tgl.getDate();
+        if (bulan === 0 && hari === 1) {
+          return tgl.getFullYear().toString();
+        }
+        return tgl.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+
     async function loadStats() {
       const { count: total } = await db.from('kajian').select('*', { count: 'exact', head: true });
       const tahunIni = new Date().getFullYear();
@@ -253,7 +263,7 @@
           <tbody>
             ${data.map(k => {
               const tags = k.kajian_keywords?.map(kk => `<span class="tag">${kk.keywords.nama}</span>`).join(' ') || '—';
-              const tgl = new Date(k.tanggal_terbit).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+              const tgl = formatTanggal(k.tanggal_terbit);
               return `
                 <tr>
                   <td class="td-judul">

@@ -129,7 +129,7 @@
 
   <nav class="navbar">
     <a href="../index.html" class="navbar-brand">
-      <div class="logo-icon">📚</div>
+      <img src="https://i.ibb.co.com/rJXDzN1/sosmed-new.png" alt="Logo BAPPPEDA Sijunjung" style="height:36px;width:36px;object-fit:contain;border-radius:8px;" />
       <div>
         <div class="brand-text">Litbang Sijunjung</div>
         <div class="brand-sub">Panel Admin</div>
@@ -170,6 +170,12 @@
           <div class="form-group">
             <label for="tanggal">Tanggal Terbit</label>
             <input type="date" id="tanggal" />
+            <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="tahunSaja" style="width:auto;margin:0;cursor:pointer" onchange="toggleTahunSaja()" />
+              <label for="tahunSaja" style="font-weight:400;font-size:13px;color:var(--teks-abu);margin:0;cursor:pointer">Tanggal tidak lengkap (isi tahun saja)</label>
+            </div>
+            <input type="number" id="tahunInput" placeholder="Contoh: 2023" min="1990" max="2099"
+              style="display:none;margin-top:8px;width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;outline:none;" />
           </div>
         </div>
 
@@ -227,6 +233,12 @@
     let editId = null;
     let uploadedFileUrl = null;
 
+    function toggleTahunSaja() {
+      const checked = document.getElementById('tahunSaja').checked;
+      document.getElementById('tanggal').style.display = checked ? 'none' : '';
+      document.getElementById('tahunInput').style.display = checked ? '' : 'none';
+    }
+
     // Auth check
     db.auth.getSession().then(({ data }) => {
       if (!data.session) window.location.href = 'login.html';
@@ -250,6 +262,14 @@
       document.getElementById('tanggal').value = data.tanggal_terbit;
       document.getElementById('abstrak').value = data.abstrak || '';
       document.getElementById('fileUrl').value = data.file_url || '';
+      // Cek apakah tanggal hanya tahun (hari & bulan = 01)
+      const tgl = new Date(data.tanggal_terbit);
+      const isTahunSaja = tgl.getMonth() === 0 && tgl.getDate() === 1;
+      if (isTahunSaja) {
+        document.getElementById('tahunSaja').checked = true;
+        toggleTahunSaja();
+        document.getElementById('tahunInput').value = tgl.getFullYear();
+      }
       uploadedFileUrl = data.file_url;
 
       // Load tags
@@ -353,7 +373,15 @@
     async function saveKajian() {
       const judul = document.getElementById('judul').value.trim();
       const penulis = document.getElementById('penulis').value.trim();
-      const tanggal = document.getElementById('tanggal').value;
+      const tahunSaja = document.getElementById('tahunSaja').checked;
+      let tanggal;
+      if (tahunSaja) {
+        const tahun = document.getElementById('tahunInput').value;
+        if (!tahun) { showError('Tahun wajib diisi.'); btn.disabled = false; btn.textContent = editId ? '💾 Simpan Perubahan' : '💾 Simpan & Publikasikan'; return; }
+        tanggal = `${tahun}-01-01`;
+      } else {
+        tanggal = document.getElementById('tanggal').value;
+      }
       const abstrak = document.getElementById('abstrak').value.trim();
       const manualUrl = document.getElementById('fileUrl').value.trim();
 
